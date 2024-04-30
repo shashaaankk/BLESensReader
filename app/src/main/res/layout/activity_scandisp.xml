@@ -59,7 +59,7 @@
         tools:layout_editor_absoluteX="0dp" />
 
     <ListView
-        android:id="@+id/list"
+        android:id="@android:id/list"
         android:layout_width="370dp"
         android:layout_height="335dp"
         android:layout_marginStart="25dp"

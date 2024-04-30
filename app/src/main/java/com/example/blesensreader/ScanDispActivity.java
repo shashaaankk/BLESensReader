@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,6 +36,8 @@ public class ScanDispActivity extends ListActivity {
     ArrayList<String> listItems;
     ArrayAdapter<String> adapter;
 
+    private Button toWeather;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,7 +46,7 @@ public class ScanDispActivity extends ListActivity {
 
         setContentView(R.layout.activity_scandisp);
 
-        listView = (ListView) findViewById(R.id.list);
+        listView = getListView();
         mleDeviceListAdapter = new LeDeviceListAdapter();
         listView.setAdapter(mleDeviceListAdapter);
 
@@ -67,6 +70,16 @@ public class ScanDispActivity extends ListActivity {
         } else {
             Toast.makeText(this, "BluetoothManager not available", Toast.LENGTH_SHORT).show();
         }
+
+        toWeather = findViewById(R.id.transition);
+
+        //Transition
+        toWeather.setOnClickListener(v -> {
+
+            Intent intent = new Intent(ScanDispActivity.this, MainActivity.class);
+            startActivity(intent);
+
+        });
 
     }
 
