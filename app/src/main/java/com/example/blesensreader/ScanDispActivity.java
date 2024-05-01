@@ -11,11 +11,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,6 +36,8 @@ public class ScanDispActivity extends ListActivity {
     ListView listView;
     ArrayList<String> listItems;
     ArrayAdapter<String> adapter;
+    private Button ScanBtn;
+    private Button toWeather;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -43,9 +47,10 @@ public class ScanDispActivity extends ListActivity {
 
         setContentView(R.layout.activity_scandisp);
 
-        listView = (ListView) findViewById(R.id.list);
+        listView = getListView();
         mleDeviceListAdapter = new LeDeviceListAdapter();
         listView.setAdapter(mleDeviceListAdapter);
+        ScanBtn = findViewById(R.id.Scanbutton);
 
         /*
          * Setting up BluetoothScanner for Discovering Nearby BLE Devices
@@ -58,6 +63,8 @@ public class ScanDispActivity extends ListActivity {
             if (bluetoothAdapter != null) {
                 // Get the BluetoothLeScanner
                 bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+                Log.d(null, "Got Bluetooth Scanner");
+                Toast.makeText(this, "Got Bluetooth Scanner", Toast.LENGTH_SHORT).show();
                 if (bluetoothLeScanner == null) {
                     Toast.makeText(this, "Unable to obtain a BluetoothLeScanner", Toast.LENGTH_SHORT).show();
                 }
@@ -67,6 +74,30 @@ public class ScanDispActivity extends ListActivity {
         } else {
             Toast.makeText(this, "BluetoothManager not available", Toast.LENGTH_SHORT).show();
         }
+
+        //Scan
+        ScanBtn.setOnClickListener(v -> {
+            Toast.makeText(this, "Scan Pressed!", Toast.LENGTH_SHORT).show();
+            if (bluetoothLeScanner != null)
+            {
+                scanning = false;     //Stop Scanning!
+                Toast.makeText(this, "Starting Scan", Toast.LENGTH_SHORT).show();
+                scanLeDevice();       //Start Scanning!
+                Log.d(null, "Starting Scan!");
+
+            }
+
+        });
+
+        //Transition
+        toWeather = findViewById(R.id.transition);
+
+        toWeather.setOnClickListener(v -> {
+
+            Intent intent = new Intent(ScanDispActivity.this, MainActivity.class);
+            startActivity(intent);
+
+        });
 
     }
 
@@ -124,6 +155,8 @@ public class ScanDispActivity extends ListActivity {
     @SuppressLint("MissingPermission")
     private void scanLeDevice() {
         if (!scanning) {
+            Log.d(null, "Wubba Lubba dub dub!");
+            Toast.makeText(this, "Wubba Lubba dub dub!", Toast.LENGTH_SHORT).show();
             mHandler.postDelayed(new Runnable() {
                 @SuppressLint("MissingPermission")
                 @Override
@@ -136,6 +169,7 @@ public class ScanDispActivity extends ListActivity {
             scanning = true;
             bluetoothLeScanner.startScan(BleScanCallback);
         } else {
+            Log.d(null, "dub dub Lubba Wubba!");
             scanning = false;
             bluetoothLeScanner.stopScan(BleScanCallback);
         }
@@ -150,7 +184,7 @@ public class ScanDispActivity extends ListActivity {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
-
+            Log.d(null, "Scan Result Obtained");
             mleDeviceListAdapter.addDevice(result.getDevice());
             mleDeviceListAdapter.notifyDataSetChanged();
         }
