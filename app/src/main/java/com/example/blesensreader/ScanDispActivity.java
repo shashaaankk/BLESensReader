@@ -3,14 +3,22 @@ import android.annotation.SuppressLint;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
+import android.bluetooth.le.ScanFilter;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,6 +29,13 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
 
 
 import java.util.ArrayList;
@@ -37,8 +52,11 @@ public class ScanDispActivity extends ListActivity {
     ArrayList<String> listItems;
     ArrayAdapter<String> adapter;
     private Button ScanBtn;
-    private Button toWeather;
+    private Button disconnect;
 
+    public Boolean isConnected;
+
+    @SuppressLint("MissingPermission")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,6 +101,11 @@ public class ScanDispActivity extends ListActivity {
                 scanning = false;     //Stop Scanning!
                 Toast.makeText(this, "Starting Scan", Toast.LENGTH_SHORT).show();
                 scanLeDevice();       //Start Scanning!
+//                ScanSettings settings = new ScanSettings.Builder()
+//                        .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+//                        .build();
+//                bluetoothLeScanner.startScan(null, settings, BleScanCallback);
+
                 Log.d(null, "Starting Scan!");
 
             }
@@ -90,13 +113,10 @@ public class ScanDispActivity extends ListActivity {
         });
 
         //Transition
-        toWeather = findViewById(R.id.transition);
+        disconnect = findViewById(R.id.transition);
 
-        toWeather.setOnClickListener(v -> {
-
-            Intent intent = new Intent(ScanDispActivity.this, MainActivity.class);
-            startActivity(intent);
-
+        disconnect.setOnClickListener(v -> {
+            //TODO: Disconnect
         });
 
     }
@@ -155,8 +175,39 @@ public class ScanDispActivity extends ListActivity {
     @SuppressLint("MissingPermission")
     private void scanLeDevice() {
         if (!scanning) {
+
             Log.d(null, "Wubba Lubba dub dub!");
-            Toast.makeText(this, "Wubba Lubba dub dub!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Scanning!", Toast.LENGTH_SHORT).show();
+
+            // Interested UUIDs
+            UUID uuid1 = UUID.fromString("00000002-0000-0000-FDFD-FDFDFDFDFDFD");//Weather
+            UUID uuid2 = UUID.fromString("00000001-0000-0000-FDFD-FDFDFDFDFDFD");//FAN
+
+            String serviceUuidMaskString = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF";
+            ParcelUuid parcelUuidMask = ParcelUuid.fromString(serviceUuidMaskString);
+
+            // filters for these UUIDs
+            ScanFilter.Builder filter1 = new ScanFilter.Builder()
+                    .setServiceUuid(new ParcelUuid(uuid1),parcelUuidMask);
+            ScanFilter filter2 = new ScanFilter.Builder()
+                    .setServiceUuid(new ParcelUuid(uuid2),parcelUuidMask)
+                    .build();
+
+            //Test Device BLE BT-Shutter
+            String MyBTShutterMac = "2A:07:98:10:48:A0";
+            ScanFilter macFilter = new ScanFilter.Builder()
+                    .setDeviceAddress(MyBTShutterMac)
+                    .build();
+
+            List<ScanFilter> filters = new ArrayList<>();
+            filters.add(filter1.build());//Weather
+            filters.add(filter2);//FAN
+            filters.add(macFilter);
+
+            ScanSettings settings = new ScanSettings.Builder()
+                    .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                    .build();
+
             mHandler.postDelayed(new Runnable() {
                 @SuppressLint("MissingPermission")
                 @Override
@@ -168,8 +219,10 @@ public class ScanDispActivity extends ListActivity {
 
             scanning = true;
             bluetoothLeScanner.startScan(BleScanCallback);
+            //bluetoothLeScanner.startScan(filters, settings, BleScanCallback);
         } else {
             Log.d(null, "dub dub Lubba Wubba!");
+            Toast.makeText(this, "Stopping scan!", Toast.LENGTH_SHORT).show();
             scanning = false;
             bluetoothLeScanner.stopScan(BleScanCallback);
         }
@@ -193,16 +246,69 @@ public class ScanDispActivity extends ListActivity {
     @SuppressLint("MissingPermission")
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
+        Toast.makeText(this, "Received Connection Request", Toast.LENGTH_SHORT).show();
         final BluetoothDevice device = mleDeviceListAdapter.getDevice(position);
         if (device == null) return;
+        BluetoothGatt bluetoothGatt = device.connectGatt(this, false, gattCallback);
+        if (isConnected) {
+            Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+        }
         final Intent intent = new Intent(this, MainActivity.class);
-        // TODO: Information Passing w Intents as Required, PutExtra
+//        // TODO: Information Passing w Intents as Required, PutExtra, Connection Check
+//        intent.putExtra(MainActivity.EXTRAS_DEVICE_NAME, device.getName());
+//        intent.putExtra(MainActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+
         if (scanning) {
             bluetoothAdapter.stopLeScan((BluetoothAdapter.LeScanCallback) BleScanCallback);
             scanning = false;
         }
-        startActivity(intent);
+//        startActivity(intent);
     }
+
+    private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
+        //Figure Out:
+        @SuppressLint("MissingPermission")
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            super.onConnectionStateChange(gatt, status, newState);
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    gatt.discoverServices();
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    gatt.close();
+                }
+            } else {
+                //ERROR
+                gatt.close();
+            }
+        }
+
+        @SuppressLint("MissingPermission")
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                // Services have been successfully discovered
+                BluetoothGattService service = gatt.getService(UUID.fromString("00000002-0000-0000-FDFD-FDFDFDFDFDFD"));
+                if (service != null) {
+//                    BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString("characteristic-uuid-here"));
+//                    // Example operation: Read the characteristic
+//                    gatt.readCharacteristic(characteristic);
+                      ScanBtn.setEnabled(false);
+                }
+            } else {
+                Log.w("BluetoothGattCallback", "Failed to discover services. Status: " + status);
+            }
+        }
+//        @Override
+//        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+//            if (status == BluetoothGatt.GATT_SUCCESS) {
+//                // Successfully read the characteristic
+//                byte[] data = characteristic.getValue();
+//                String value = new String(data, StandardCharsets.UTF_8);
+//                Log.i("BluetoothGattCallback", "Read characteristic value: " + value);
+//            }
+//        }
+    };
 
     static class ViewHolder {
         TextView deviceName;
