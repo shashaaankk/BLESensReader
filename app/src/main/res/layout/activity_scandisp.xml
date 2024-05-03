@@ -58,7 +58,7 @@
         android:layout_marginStart="25dp"
         android:layout_marginTop="600dp"
         android:layout_marginEnd="25dp"
-        android:text="Read Weather"
+        android:text="Disconnect"
         android:textColorLink="#3F51B5"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

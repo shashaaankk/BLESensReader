@@ -41,6 +41,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean isACCESS_FINE_LOCATION = false;
     private Button toscanButton;
 
+    public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
+    public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
