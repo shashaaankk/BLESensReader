@@ -36,6 +36,7 @@
         <activity
             android:name=".ScanDispActivity"
             android:exported="true"/>
+        <service android:name=".BluetoothLeService" android:enabled="true"/>
     </application>
 
 </manifest>

@@ -1,8 +1,8 @@
 package com.example.blesensreader;
 import static android.bluetooth.BluetoothAdapter.STATE_CONNECTED;
 import static android.bluetooth.BluetoothAdapter.STATE_DISCONNECTED;
-import static com.example.blesensreader.BluetoothLeService.ACTION_GATT_CONNECTED;
-import static com.example.blesensreader.BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED;
+//import static com.example.blesensreader.BluetoothLeService.ACTION_GATT_CONNECTED;
+//import static com.example.blesensreader.BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED;
 
 import android.annotation.SuppressLint;
 import android.app.ListActivity;
@@ -85,6 +85,7 @@ public class ScanDispActivity extends ListActivity {
         setContentView(R.layout.activity_scandisp);
 
         listView = getListView();
+
         mleDeviceListAdapter = new LeDeviceListAdapter();
         listView.setAdapter(mleDeviceListAdapter);
         ScanBtn = findViewById(R.id.Scanbutton);
@@ -133,15 +134,15 @@ public class ScanDispActivity extends ListActivity {
 
         });
 
-        //Disconnection
-        disconnect = findViewById(R.id.transition);
-
-        disconnect.setOnClickListener(v -> {
-            disconnect();
-            Toast.makeText(this, "Disconnecting and Releasing Resources!", Toast.LENGTH_SHORT).show();
-            close();
-            instruct.setText("Disconnected");
-        });
+//        //Disconnection
+//        disconnect = findViewById(R.id.transition);
+//
+//        disconnect.setOnClickListener(v -> {
+//            disconnect();
+//            Toast.makeText(this, "Disconnecting and Releasing Resources!", Toast.LENGTH_SHORT).show();
+//            close();
+//            instruct.setText("Disconnected");
+//        });
 
     }
 
@@ -272,98 +273,102 @@ public class ScanDispActivity extends ListActivity {
         Toast.makeText(this, "Connecting!", Toast.LENGTH_SHORT).show();
         final BluetoothDevice device = mleDeviceListAdapter.getDevice(position);
         if (device == null) return;
-        bluetoothGatt = device.connectGatt(this, false, gattCallback); // BTGatt instance : Conduct Client Operations. Auto connect is false
-        
-        if (mConnectionState == 2) {
-            Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
-        }
-//        final Intent intent = new Intent(this, MainActivity.class);
-//        // TODO: Information Passing w Intents as Required, PutExtra, Connection Check
-//        intent.putExtra(MainActivity.EXTRAS_DEVICE_NAME, device.getName());
-//        intent.putExtra(MainActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+//        bluetoothGatt = device.connectGatt(this, false, gattCallback); // BTGatt instance : Conduct Client Operations. Auto connect is false
+//
+//        if (mConnectionState == 2) {
+//            Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+//        }
+        final Intent intent = new Intent(this, MainActivity.class);
+        // TODO: Information Passing w Intents as Required, PutExtra, Connection Check
+        intent.putExtra(MainActivity.EXTRAS_DEVICE_NAME, device.getName());
+        intent.putExtra(MainActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
 
         if (scanning) {
             bluetoothAdapter.stopLeScan((BluetoothAdapter.LeScanCallback) BleScanCallback);
             scanning = false;
         }
-//        startActivity(intent);
+        startActivity(intent);
     }
-    private int mConnectionState;
-    /*Reference Android Connectivity Samples: GitHub*/
-    private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
-        //Figure Out:
-        @SuppressLint("MissingPermission")
-        @Override
-        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            String intentAction; // Type of action that has occurred in the Bluetooth connection
-
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
-                intentAction = ACTION_GATT_CONNECTED;
-                instruct.setText("CB: Connection to GATT server established");
-
-                mConnectionState = STATE_CONNECTED;
-                broadcastUpdate(intentAction);
-
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                intentAction = ACTION_GATT_DISCONNECTED;
-                instruct.setText(" CB: Connection to GATT server lost");
-                mConnectionState = STATE_DISCONNECTED;
-                broadcastUpdate(intentAction);
-            }
-        }
-
-        @SuppressLint("MissingPermission")
-        @Override
-        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
-                instruct.setText("CB: GATT Services Discoverd");
-            }
-        }
-
-        @Override
-        public void onCharacteristicRead(BluetoothGatt gatt,
-                                         BluetoothGattCharacteristic characteristic,
-                                         int status) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
-                instruct.setText("CB: Data Available");
-            }
-        }
-
-        @Override
-        public void onCharacteristicChanged(BluetoothGatt gatt,
-                                            BluetoothGattCharacteristic characteristic) {
-            broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
-        }
-
-    };
-
-    private void broadcastUpdate(final String action) {
-        final Intent intent = new Intent(action);
-        sendBroadcast(intent);
-    }
-
-    private void broadcastUpdate(final String action,
-                                 final BluetoothGattCharacteristic characteristic) { }
-
-    @SuppressLint("MissingPermission")
-    public void disconnect() {
-        if (bluetoothAdapter == null || bluetoothGatt == null) {
-            //Not Initialized
-            return;
-        }
-        bluetoothGatt.disconnect();
-    }
-
-    @SuppressLint("MissingPermission")
-    public void close() {
-        if (bluetoothGatt == null) {
-            return;
-        }
-        bluetoothGatt.close();
-        bluetoothGatt = null;
-    }
+//    private int mConnectionState;
+//    /*Reference Android Connectivity Samples: GitHub*/
+//    private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
+//        //Figure Out:
+//        @SuppressLint("MissingPermission")
+//        @Override
+//        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+//            String intentAction; // Type of action that has occurred in the Bluetooth connection
+//
+//            if (newState == BluetoothProfile.STATE_CONNECTED) {
+//                intentAction = ACTION_GATT_CONNECTED; //Use
+//                instruct.setText("CB: Connection to GATT server established");
+//
+//                mConnectionState = STATE_CONNECTED;
+//                broadcastUpdate(intentAction);
+//
+//            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+//                intentAction = ACTION_GATT_DISCONNECTED;
+//                instruct.setText(" CB: Connection to GATT server lost");
+//                mConnectionState = STATE_DISCONNECTED;
+//                broadcastUpdate(intentAction);
+//            }
+//        }
+//
+//        @SuppressLint("MissingPermission")
+//        @Override
+//        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+//            if (status == BluetoothGatt.GATT_SUCCESS) {
+//                broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+//                instruct.setText("CB: GATT Services Discoverd");
+//            }
+//        }
+//
+//        @Override
+//        public void onCharacteristicRead(BluetoothGatt gatt,
+//                                         BluetoothGattCharacteristic characteristic,
+//                                         int status) {
+//            if (status == BluetoothGatt.GATT_SUCCESS) {
+//                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+//                instruct.setText("CB: Characteristic Read");
+//            }
+//        }
+//
+//        @Override
+//        public void onCharacteristicChanged(BluetoothGatt gatt,
+//                                            BluetoothGattCharacteristic characteristic) {
+//            broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+//            instruct.setText("CB: Characteristic Changed!");
+//        }
+//
+//    };
+//
+//    private void broadcastUpdate(final String action) {
+//        final Intent intent = new Intent(action);
+//        sendBroadcast(intent);
+//    }
+//
+//    private void broadcastUpdate(final String action,
+//                                 final BluetoothGattCharacteristic characteristic) {
+//
+//    }
+//
+//    @SuppressLint("MissingPermission")
+//    public void disconnect() {
+//        if (bluetoothAdapter == null || bluetoothGatt == null) {
+//            //Not Initialized
+//            return;
+//        }
+//        bluetoothGatt.disconnect();
+//    }
+//
+//    @SuppressLint("MissingPermission")
+//    public void close() {
+//        if (bluetoothGatt == null) {
+//            return;
+//        }
+//        bluetoothGatt.close();
+//        bluetoothGatt = null;
+//    }
+//
 
     static class ViewHolder {
         TextView deviceName;
