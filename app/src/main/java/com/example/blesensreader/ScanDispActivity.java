@@ -140,6 +140,7 @@ public class ScanDispActivity extends ListActivity {
             disconnect();
             Toast.makeText(this, "Disconnecting and Releasing Resources!", Toast.LENGTH_SHORT).show();
             close();
+            instruct.setText("Disconnected");
         });
 
     }
