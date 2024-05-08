@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -35,10 +36,12 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,7 +49,25 @@ import java.util.UUID;
 import java.util.ArrayList;
 
 public class ScanDispActivity extends ListActivity {
+    // Interested UUIDs
+    private final UUID uuid1 = UUID.fromString("00000002-0000-0000-FDFD-FDFDFDFDFDFD");//Weather: Service
+    private final UUID uuid2 = UUID.fromString("00000001-0000-0000-FDFD-FDFDFDFDFDFD");//FAN
+    private final UUID uuidlighht = UUID.fromString ("10000001-0000-0000-FDFD-FDFDFDFDFDFD");
 
+    //THIS
+    private final UUID uuidShutter = convertFromInteger(0x1801);//Shutter
+    private final UUID uuidHID = convertFromInteger(0x1801);//Shutter Characteristic
+    private final UUID uuid_temp = UUID.fromString("00002a1c-0000-1000-8000-00805f9b34fb"); //Characteristic
+    private final UUID uuid_humidity = UUID.fromString("00002a6f-0000-1000-8000-00805f9b34fb");; //Characteristic
+    private final UUID uuid1_char = convertFromInteger(0x2902);
+
+    //Reference: https://medium.com/@shahar_avigezer/bluetooth-low-energy-on-android-22bc7310387a/
+    public UUID convertFromInteger(int i) {
+        final long MSB = 0x0000000000001000L;
+        final long LSB = 0x800000805f9b34fbL;
+        long value = i & 0xFFFFFFFF;
+        return new UUID(MSB | (value << 32),LSB);
+    }
     public final static String ACTION_GATT_CONNECTED =
             "com.example.bluetooth.le.ACTION_GATT_CONNECTED";
     public final static String ACTION_GATT_DISCONNECTED =
@@ -202,31 +223,27 @@ public class ScanDispActivity extends ListActivity {
 
             Log.d(null, "Wubba Lubba dub dub!");
             Toast.makeText(this, "Scanning!", Toast.LENGTH_SHORT).show();
-
-            // Interested UUIDs
-            UUID uuid1 = UUID.fromString("00000002-0000-0000-FDFD-FDFDFDFDFDFD");//Weather
-            UUID uuid2 = UUID.fromString("00000001-0000-0000-FDFD-FDFDFDFDFDFD");//FAN
-
-            String serviceUuidMaskString = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF";
-            ParcelUuid parcelUuidMask = ParcelUuid.fromString(serviceUuidMaskString);
-
-            // filters for these UUIDs
-            ScanFilter.Builder filter1 = new ScanFilter.Builder()
-                    .setServiceUuid(new ParcelUuid(uuid1),parcelUuidMask);
-            ScanFilter filter2 = new ScanFilter.Builder()
-                    .setServiceUuid(new ParcelUuid(uuid2),parcelUuidMask)
-                    .build();
-
+//THIS
             //Test Device BLE BT-Shutter
             String MyBTShutterMac = "2A:07:98:10:48:A0";
+            String IPVSWeather = "F6:B6:2A:79:7B:5D";
+            String IPVSLight = "F8:20:74:F7:2B:82";
             ScanFilter macFilter = new ScanFilter.Builder()
                     .setDeviceAddress(MyBTShutterMac)
                     .build();
+            ScanFilter filterWeather = new ScanFilter.Builder()
+                    .setDeviceAddress(IPVSWeather)
+                    .build();
+            ScanFilter filterLight= new ScanFilter.Builder()
+                    .setDeviceAddress(IPVSLight)
+                    .build();
 
             List<ScanFilter> filters = new ArrayList<>();
-            filters.add(filter1.build());//Weather
-            filters.add(filter2);//FAN
+//            filters.add(filter1.build());//Weather
+//            filters.add(filter2);//FAN
             filters.add(macFilter);
+            filters.add(filterWeather);
+            filters.add(filterLight);
 
             ScanSettings settings = new ScanSettings.Builder()
                     .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
@@ -241,9 +258,9 @@ public class ScanDispActivity extends ListActivity {
                 }
             }, SCAN_PERIOD);
 
-            scanning = true;
-            bluetoothLeScanner.startScan(BleScanCallback);
-            //bluetoothLeScanner.startScan(filters, settings, BleScanCallback);
+            //scanning = true;
+            //bluetoothLeScanner.startScan(BleScanCallback);
+            bluetoothLeScanner.startScan(filters, settings, BleScanCallback);
         } else {
             Toast.makeText(this, "Stopping scan!", Toast.LENGTH_SHORT).show();
             scanning = false;
@@ -273,7 +290,7 @@ public class ScanDispActivity extends ListActivity {
         final BluetoothDevice device = mleDeviceListAdapter.getDevice(position);
         if (device == null) return;
         bluetoothGatt = device.connectGatt(this, false, gattCallback); // BTGatt instance : Conduct Client Operations. Auto connect is false
-        
+
         if (mConnectionState == 2) {
             Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
         }
@@ -300,7 +317,7 @@ public class ScanDispActivity extends ListActivity {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 intentAction = ACTION_GATT_CONNECTED;
                 instruct.setText("CB: Connection to GATT server established");
-
+                bluetoothGatt.discoverServices();
                 mConnectionState = STATE_CONNECTED;
                 broadcastUpdate(intentAction);
 
@@ -318,7 +335,39 @@ public class ScanDispActivity extends ListActivity {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
                 instruct.setText("CB: GATT Services Discoverd");
+                Log.d("service",gatt.getDevice().getName());
+                Log.d("service",gatt.getServices().get(0).toString());
+                BluetoothGattCharacteristic shutter =
+                        bluetoothGatt.getService(uuid1).getCharacteristic(uuid_temp);
+                Log.d("service",shutter.toString());
+                if(gatt.readCharacteristic(shutter))
+                    Log.d("service","reader set");
+                shutter.getDescriptor(uuid1_char).setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                if(gatt.writeDescriptor(shutter.getDescriptor(uuid1_char)))
+                    Log.d("service","descriptor set");
+                if(gatt.setCharacteristicNotification(shutter,true))
+                    Log.d("service","notifier set");
+//                shutter.setValue(0,0,BluetoothGattCharacteristic.FORMAT_UINT16,0);
+//                if ((shutter.getProperties() & BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) ==0)
+//                    Log.d("service","no resp");
+//                if ((shutter.getProperties() & BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) ==0)
+//                    Log.d("service","default");
+//                if ((shutter.getProperties() & BluetoothGattCharacteristic.WRITE_TYPE_SIGNED) ==0)
+//                    Log.d("service","signed");
+//                shutter.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+//                if (gatt.writeCharacteristic(shutter))
+//                    Log.d("service","success write");
+                //shutter.setValue()
             }
+        }
+        @SuppressLint("MissingPermission")
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            super.onDescriptorWrite(gatt, descriptor, status);
+            Log.d("dtfwg","adfta");
+            BluetoothGattCharacteristic shutter = gatt.getService(uuid1).getCharacteristic(uuid_temp);
+            shutter.setValue(new byte[] {1,1});
+            gatt.writeCharacteristic(shutter);
         }
 
         @Override
@@ -328,13 +377,21 @@ public class ScanDispActivity extends ListActivity {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
                 instruct.setText("CB: Data Available");
+                Log.d("service",characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16,0).toString());
             }
         }
 
         @Override
-        public void onCharacteristicChanged(BluetoothGatt gatt,
-                                            BluetoothGattCharacteristic characteristic) {
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            super.onCharacteristicWrite(gatt, characteristic, status);
+            Log.d("cdgscja","dvahd");
+        }
+
+        @Override
+        public void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {
+            super.onCharacteristicChanged(gatt, characteristic, value);
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+            Log.d("dayudh","changed");
         }
 
     };
