@@ -7,47 +7,44 @@
 
     <TextView
         android:id="@+id/disp"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="372dp"
+        android:layout_height="123dp"
         android:layout_marginStart="25dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="60dp"
         android:layout_marginEnd="25dp"
         android:height="50dp"
-        android:autoSizeMaxTextSize="30dp"
+        android:autoSizeMaxTextSize="12dp"
         android:autoSizeMinTextSize="10dp"
         android:autoSizeTextType="uniform"
-        android:fontFamily="sans-serif-smallcaps"
-        android:text="Weather App"
-        android:textColor="#090909"
+        android:contextClickable="false"
+        android:elegantTextHeight="false"
+        android:fontFamily="monospace"
+        android:freezesText="false"
+        android:text="Press scan to begin scanning for BLE devices"
+        android:textAlignment="textStart"
+        android:textAllCaps="true"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textColor="#FFE1E1"
         android:textColorLink="#3F51B5"
-        android:textSize="24sp"
-        android:textStyle="bold"
+        android:textSize="12sp"
+        android:textStyle="normal"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.818"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/instruction"
-        android:layout_width="0dp"
-        android:layout_height="42dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="10dp"
-        android:text="BLE Scanner, Press below button to begin scan \nTap a device to connect!"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/disp" />
 
     <Button
         android:id="@+id/Scanbutton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="25dp"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="36dp"
         android:layout_marginEnd="25dp"
+        android:fontFamily="monospace"
         android:text="Scan"
         android:textColorLink="#3F51B5"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/disp" />
 
@@ -56,18 +53,20 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="25dp"
-        android:layout_marginTop="600dp"
+        android:layout_marginTop="396dp"
         android:layout_marginEnd="25dp"
+        android:fontFamily="monospace"
         android:text="Disconnect"
         android:textColorLink="#3F51B5"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/disp" />
 
     <ListView
         android:id="@android:id/list"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="357dp"
+        android:layout_height="234dp"
         android:layout_marginStart="25dp"
         android:layout_marginTop="50dp"
         android:layout_marginEnd="25dp"
@@ -76,5 +75,30 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/Scanbutton"
-        app:layout_constraintVertical_bias="0.498" />
+        app:layout_constraintVertical_bias="0.0" />
+
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="346dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="50dp"
+        android:layout_marginEnd="25dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/transition" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="25dp"
+        android:fontFamily="monospace"
+        android:text="SET FAN SPEED"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/seekBar" />
 </androidx.constraintlayout.widget.ConstraintLayout>

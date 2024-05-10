@@ -21,46 +21,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0">
 
-        <TextView
-            android:id="@+id/disp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:height="50dp"
-            android:autoSizeMaxTextSize="30dp"
-            android:autoSizeMinTextSize="10dp"
-            android:autoSizeTextType="uniform"
-            android:fontFamily="sans-serif-smallcaps"
-            android:text="Weather App"
-            android:textColor="#090909"
-            android:textColorLink="#3F51B5"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <Space
-            android:layout_width="match_parent"
-            android:layout_height="100dp" />
-
-        <TextView
-            android:id="@+id/temp"
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:autoSizeMaxTextSize="30dp"
-            android:autoSizeMinTextSize="10dp"
-            android:autoSizeTextType="uniform"
-            android:background="#EAE8E8"
-            android:paddingHorizontal="20dp"
-            android:paddingVertical="20dp"
-            android:paddingStart="20dp"
-            android:paddingLeft="20dp"
-            android:paddingTop="20dp"
-            android:paddingEnd="20dp"
-            android:paddingRight="20dp"
-            android:paddingBottom="20dp"
-            android:text="Temperature"
-            android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-            android:textColorLink="#3F51B5"
-            android:textSize="34sp" />
-
         <Space
             android:layout_width="match_parent"
             android:layout_height="100dp" />
@@ -68,11 +28,11 @@
         <TextView
             android:id="@+id/humidity"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
+            android:layout_height="81dp"
             android:autoSizeMaxTextSize="30dp"
             android:autoSizeMinTextSize="10dp"
             android:autoSizeTextType="uniform"
-            android:background="#EAE8E8"
+            android:fontFamily="monospace"
             android:paddingHorizontal="20dp"
             android:paddingVertical="20dp"
             android:paddingStart="20dp"
@@ -81,19 +41,27 @@
             android:paddingEnd="20dp"
             android:paddingRight="20dp"
             android:paddingBottom="20dp"
-            android:text="Humidity"
+            android:text="Weather &amp; Fan Control App"
+            android:textAlignment="center"
             android:textAppearance="@style/TextAppearance.AppCompat.Display1"
+            android:textColor="#FFE1E1"
+            android:textColorHighlight="#171616"
+            android:textColorHint="#673AB7"
             android:textColorLink="#3F51B5" />
 
         <Space
             android:layout_width="match_parent"
-            android:layout_height="150dp" />
+            android:layout_height="150dp"
+            android:background="#090909" />
 
         <Button
             android:id="@+id/toScanButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="TO SCAN"
+            android:layout_marginStart="25dp"
+            android:layout_marginEnd="25dp"
+            android:fontFamily="monospace"
+            android:text="SCAN AND CONTROL"
             android:textColorLink="#3F51B5" />
 
     </LinearLayout>
