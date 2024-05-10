@@ -221,7 +221,6 @@ public class ScanDispActivity extends ListActivity {
     private void scanLeDevice() {
         if (!scanning) {
 
-            Log.d(null, "Wubba Lubba dub dub!");
             Toast.makeText(this, "Scanning!", Toast.LENGTH_SHORT).show();
 //THIS
             //Test Device BLE BT-Shutter
@@ -284,6 +283,24 @@ public class ScanDispActivity extends ListActivity {
     };
 
     @SuppressLint("MissingPermission")
+    private void setupNotifications()
+    {
+        BluetoothGattCharacteristic temp = bluetoothGatt.getService(uuid1).getCharacteristic(uuid_temp);
+        BluetoothGattDescriptor descriptor_t = temp.getDescriptor(uuid1_char);
+        bluetoothGatt.setCharacteristicNotification(temp,true);
+        descriptor_t.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+        bluetoothGatt.writeDescriptor(descriptor_t);
+    }
+    @SuppressLint("MissingPermission")
+    private void writefan(int value){
+        byte[] bytes = new byte[2]; // uint16 takes 2 bytes
+        bytes[0] = (byte) (value & 0xFF);       // Lower byte
+        bytes[1] = (byte) ((value >> 8) & 0xFF); // Upper byte
+        BluetoothGattCharacteristic shutter = bluetoothGatt.getService(uuid2).getCharacteristic(uuidlighht);
+        shutter.setValue(bytes);
+        bluetoothGatt.writeCharacteristic(shutter);
+    }
+    @SuppressLint("MissingPermission")
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         Toast.makeText(this, "Connecting!", Toast.LENGTH_SHORT).show();
@@ -337,16 +354,19 @@ public class ScanDispActivity extends ListActivity {
                 instruct.setText("CB: GATT Services Discoverd");
                 Log.d("service",gatt.getDevice().getName());
                 Log.d("service",gatt.getServices().get(0).toString());
-                BluetoothGattCharacteristic shutter =
-                        bluetoothGatt.getService(uuid1).getCharacteristic(uuid_temp);
-                Log.d("service",shutter.toString());
-                if(gatt.readCharacteristic(shutter))
-                    Log.d("service","reader set");
-                shutter.getDescriptor(uuid1_char).setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                if(gatt.writeDescriptor(shutter.getDescriptor(uuid1_char)))
-                    Log.d("service","descriptor set");
-                if(gatt.setCharacteristicNotification(shutter,true))
-                    Log.d("service","notifier set");
+                setupNotifications();
+                //writefan(10000);
+
+                //shutter.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+
+
+                //if(gatt.readCharacteristic(shutter))
+                //    Log.d("service","reader set");
+                //shutter.getDescriptor(uuid1_char).setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+//                if(gatt.writeDescriptor(shutter.getDescriptor(uuid1_char)))
+//                    Log.d("service","descriptor set");
+//                if(gatt.setCharacteristicNotification(shutter,true))
+//                    Log.d("service","notifier set");
 //                shutter.setValue(0,0,BluetoothGattCharacteristic.FORMAT_UINT16,0);
 //                if ((shutter.getProperties() & BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) ==0)
 //                    Log.d("service","no resp");
@@ -360,14 +380,23 @@ public class ScanDispActivity extends ListActivity {
                 //shutter.setValue()
             }
         }
+
         @SuppressLint("MissingPermission")
         @Override
         public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
             super.onDescriptorWrite(gatt, descriptor, status);
-            Log.d("dtfwg","adfta");
-            BluetoothGattCharacteristic shutter = gatt.getService(uuid1).getCharacteristic(uuid_temp);
-            shutter.setValue(new byte[] {1,1});
-            gatt.writeCharacteristic(shutter);
+            Log.d("service","desriptor writer");
+            BluetoothGattCharacteristic humidity = bluetoothGatt.getService(uuid1).getCharacteristic(uuid_humidity);
+            BluetoothGattDescriptor descriptor_h = humidity.getDescriptor(uuid1_char);
+            if (!descriptor_h.equals(descriptor))
+            {
+                bluetoothGatt.setCharacteristicNotification(humidity,true);
+                descriptor_h.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                bluetoothGatt.writeDescriptor(descriptor_h);
+            }
+            //BluetoothGattCharacteristic shutter = gatt.getService(uuid1).getCharacteristic(uuid_temp);
+            //shutter.setValue(new byte[] {1,1});
+            //gatt.writeCharacteristic(shutter);
         }
 
         @Override
@@ -381,17 +410,23 @@ public class ScanDispActivity extends ListActivity {
             }
         }
 
+        @SuppressLint("MissingPermission")
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            super.onCharacteristicWrite(gatt, characteristic, status);
-            Log.d("cdgscja","dvahd");
+            //super.onCharacteristicWrite(gatt, characteristic, status);
+            Log.d("cdgscja", String.valueOf(status));
+            Log.d("service",characteristic.toString());
+            BluetoothGattCharacteristic shutter = gatt.getService(uuid2).getCharacteristic(uuidlighht);
+            gatt.readCharacteristic(shutter);
         }
-
         @Override
         public void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {
             super.onCharacteristicChanged(gatt, characteristic, value);
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
-            Log.d("dayudh","changed");
+            if (characteristic.equals(bluetoothGatt.getService(uuid1).getCharacteristic(uuid_temp)))
+                Log.d("service","sensor update temp");
+            else
+                Log.d("service","sensor update humidity");
         }
 
     };
