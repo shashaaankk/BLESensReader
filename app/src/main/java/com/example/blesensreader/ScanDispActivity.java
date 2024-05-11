@@ -32,6 +32,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import java.util.List;
 import java.util.UUID;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 public class ScanDispActivity extends ListActivity {
@@ -64,7 +66,6 @@ public class ScanDispActivity extends ListActivity {
     private Button disconnect;
     private TextView instruct;
     private int userInput;
-    private boolean allowWrite = false;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -96,7 +97,7 @@ public class ScanDispActivity extends ListActivity {
             }
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                allowWrite = true;
+                writefan(userInput);
             }
         });
         /*
@@ -265,6 +266,8 @@ public class ScanDispActivity extends ListActivity {
         }
     }
     private int mConnectionState;
+    private  String h = "";
+    private  String t = "";
     /*Reference Android Connectivity Samples: GitHub*/
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @SuppressLint("MissingPermission")
@@ -288,10 +291,10 @@ public class ScanDispActivity extends ListActivity {
                 instruct.setText("CB: GATT Services Discoverd");
                 Log.d("service",gatt.getDevice().getName());
                 Log.d("service",gatt.getServices().get(0).toString());
-                setupNotifications();
-                if(allowWrite) {
+                if (gatt.getDevice().getAddress().equals("F6:B6:2A:79:7B:5D")) //checks for ipvsweather device
+                    setupNotifications();
+                if (gatt.getDevice().getAddress().equals("F8:20:74:F7:2B:82"))
                     writefan(userInput);
-                }
             }
         }
         @SuppressLint("MissingPermission")
@@ -313,7 +316,7 @@ public class ScanDispActivity extends ListActivity {
                                          BluetoothGattCharacteristic characteristic,
                                          int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                instruct.setText("CB: Data Available");
+                instruct.setText("Fan Speed: " +characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16,0).toString());
                 Log.d("service",characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16,0).toString());
             }
         }
@@ -326,11 +329,17 @@ public class ScanDispActivity extends ListActivity {
         }
         @Override
         public void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {
-            super.onCharacteristicChanged(gatt, characteristic, value);
-            if (characteristic.equals(bluetoothGatt.getService(uuid1).getCharacteristic(uuid_temp)))
-                Log.d("service","sensor update temp");
-            else
-                Log.d("service","sensor update humidity");
+
+        super.onCharacteristicChanged(gatt, characteristic, value);
+            if (characteristic.equals(bluetoothGatt.getService(uuid1).getCharacteristic(uuid_temp))){
+                Log.d("service","sensor update temp"+String.valueOf(value));
+                t = String.valueOf(intToTemp(littleEndianBytesToInt(value)));
+            }
+            if (characteristic.equals(bluetoothGatt.getService(uuid1).getCharacteristic(uuid_humidity))){
+                Log.d("service","sensor update humidity"+String.valueOf(value));
+                h = String.valueOf(intToHumidity(littleEndianBytesToInt(value)));
+            }
+            instruct.setText("Temperature:" + t +"°C"+ "\n" + "Humidity:" + h+"%");
         }
     };
     @SuppressLint("MissingPermission")
@@ -352,5 +361,18 @@ public class ScanDispActivity extends ListActivity {
     static class ViewHolder {
         TextView deviceName;
         TextView deviceAddress; //MAC
+    }
+    public int littleEndianBytesToInt(byte[] bytes) {
+        return (int)(bytes[1]<<8) +(int)bytes[0];
+    }
+    public float intToTemp(int value)
+    {
+        /*Range Assumed: -40 to +125 degrees Celsius */
+        return Math.round((((float) ((value * 165) /65535)- 40)* 100.0f) / 100.0f);
+    }
+    public float intToHumidity(int value)
+    {
+        /*Range Assumed: 0 to 100 */
+        return Math.round(((float) ((value * 100) /65535)* 100.0f) / 100.0f);
     }
 }
