@@ -36,12 +36,13 @@ import java.util.ArrayList;
 
 public class ScanDispActivity extends ListActivity {
     // Interested UUIDs
-    private final UUID uuid1 = UUID.fromString("00000002-0000-0000-FDFD-FDFDFDFDFDFD");//Weather: Service
-    private final UUID uuid2 = UUID.fromString("00000001-0000-0000-FDFD-FDFDFDFDFDFD");//FAN
+    private final UUID uuid1 = UUID.fromString("00000002-0000-0000-FDFD-FDFDFDFDFDFD");         //Weather: Service
+    private final UUID uuid2 = UUID.fromString("00000001-0000-0000-FDFD-FDFDFDFDFDFD");         //FAN
     private final UUID uuidlighht = UUID.fromString ("10000001-0000-0000-FDFD-FDFDFDFDFDFD");
     private final UUID uuid_temp = UUID.fromString("00002a1c-0000-1000-8000-00805f9b34fb");     //Characteristic
     private final UUID uuid_humidity = UUID.fromString("00002a6f-0000-1000-8000-00805f9b34fb"); //Characteristic
     private final UUID uuid1_char = convertFromInteger(0x2902);
+    private static final int MAX_VALUE = 65535;
 
     //Reference: https://medium.com/@shahar_avigezer/bluetooth-low-energy-on-android-22bc7310387a/
     public UUID convertFromInteger(int i) {
@@ -50,16 +51,6 @@ public class ScanDispActivity extends ListActivity {
         long value = i & 0xFFFFFFFF;
         return new UUID(MSB | (value << 32),LSB);
     }
-    public final static String ACTION_GATT_CONNECTED =
-            "com.example.bluetooth.le.ACTION_GATT_CONNECTED";
-    public final static String ACTION_GATT_DISCONNECTED =
-            "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED";
-    public final static String ACTION_GATT_SERVICES_DISCOVERED =
-            "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED";
-    public final static String ACTION_DATA_AVAILABLE =
-            "com.example.bluetooth.le.ACTION_DATA_AVAILABLE";
-    public final static String EXTRA_DATA =
-            "com.example.bluetooth.le.EXTRA_DATA";
     private BluetoothLeScanner bluetoothLeScanner;
     private boolean scanning;
     private Handler mHandler;
@@ -72,7 +63,9 @@ public class ScanDispActivity extends ListActivity {
     private Button ScanBtn;
     private Button disconnect;
     private TextView instruct;
-    private SeekBar seekbar;
+    private int userInput;
+    private boolean allowWrite = false;
+
     @SuppressLint("MissingPermission")
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -85,7 +78,27 @@ public class ScanDispActivity extends ListActivity {
         listView.setAdapter(mleDeviceListAdapter);
         ScanBtn = findViewById(R.id.Scanbutton);
         instruct = findViewById(R.id.disp);
-        seekbar = findViewById(R.id.seekBar);
+        SeekBar seekBar = findViewById(R.id.seekBar);
+        final TextView textView = findViewById(R.id.textView);
+
+        seekBar.setMax(MAX_VALUE);
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                // Calculate actual progress based on percentage
+                int actualProgress = (int) (progress);
+                userInput = actualProgress;
+                textView.setText(String.valueOf(actualProgress));                   // Show progress
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                allowWrite = true;
+            }
+        });
         /*
          * Setting up BluetoothScanner for Discovering Nearby BLE Devices
          * Bluetooth Manager is used to obtain an instance of BluetoothAdapter
@@ -254,20 +267,16 @@ public class ScanDispActivity extends ListActivity {
     private int mConnectionState;
     /*Reference Android Connectivity Samples: GitHub*/
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
-        //Figure Out:
         @SuppressLint("MissingPermission")
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            String intentAction; // Type of action that has occurred in the Bluetooth connection
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                intentAction = ACTION_GATT_CONNECTED;
                 instruct.setText("CB: Connection to GATT server established");
                 bluetoothGatt.discoverServices();
                 mConnectionState = STATE_CONNECTED;
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                intentAction = ACTION_GATT_DISCONNECTED;
                 instruct.setText(" CB: Connection to GATT server lost");
                 mConnectionState = STATE_DISCONNECTED;
             }
@@ -280,7 +289,9 @@ public class ScanDispActivity extends ListActivity {
                 Log.d("service",gatt.getDevice().getName());
                 Log.d("service",gatt.getServices().get(0).toString());
                 setupNotifications();
-                //writefan(10000);
+                if(allowWrite) {
+                    writefan(userInput);
+                }
             }
         }
         @SuppressLint("MissingPermission")
@@ -306,11 +317,9 @@ public class ScanDispActivity extends ListActivity {
                 Log.d("service",characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16,0).toString());
             }
         }
-
         @SuppressLint("MissingPermission")
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            Log.d("cdgscja", String.valueOf(status));
             Log.d("service",characteristic.toString());
             BluetoothGattCharacteristic shutter = gatt.getService(uuid2).getCharacteristic(uuidlighht);
             gatt.readCharacteristic(shutter);
