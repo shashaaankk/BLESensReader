@@ -30,6 +30,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.nio.ByteBuffer;
@@ -38,10 +40,13 @@ import java.util.ArrayList;
 
 public class ScanDispActivity extends ListActivity {
     // Interested UUIDs
+    // Reference: https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/Assigned_Numbers/out/en/Assigned_Numbers.pdf?v=1715622654160
     private final UUID uuid1 = UUID.fromString("00000002-0000-0000-FDFD-FDFDFDFDFDFD");         //Weather: Service
     private final UUID uuid2 = UUID.fromString("00000001-0000-0000-FDFD-FDFDFDFDFDFD");         //FAN
     private final UUID uuidlighht = UUID.fromString ("10000001-0000-0000-FDFD-FDFDFDFDFDFD");
-    private final UUID uuid_temp = UUID.fromString("00002a1c-0000-1000-8000-00805f9b34fb");     //Characteristic
+    //private final UUID uuid_temp = UUID.fromString("00002a1c-0000-1000-8000-00805f9b34fb");         //Characteristic Temp
+    private final UUID uuid_temp = convertFromInteger(0x2A1C);
+    //private final UUID uuid_temp = convertFromInteger(0x2A1F);
     private final UUID uuid_humidity = UUID.fromString("00002a6f-0000-1000-8000-00805f9b34fb"); //Characteristic
     private final UUID uuid1_char = convertFromInteger(0x2902);
     private static final int MAX_VALUE = 65535;
@@ -280,7 +285,7 @@ public class ScanDispActivity extends ListActivity {
                 mConnectionState = STATE_CONNECTED;
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                instruct.setText(" CB: Connection to GATT server lost");
+                instruct.setText(" CB: Could not Connect to GATT server");
                 mConnectionState = STATE_DISCONNECTED;
             }
         }
@@ -332,12 +337,14 @@ public class ScanDispActivity extends ListActivity {
 
         super.onCharacteristicChanged(gatt, characteristic, value);
             if (characteristic.equals(bluetoothGatt.getService(uuid1).getCharacteristic(uuid_temp))){
-                Log.d("service","sensor update temp"+String.valueOf(value));
-                t = String.valueOf(intToTemp(littleEndianBytesToInt(value)));
+                byte[] Readvalue = characteristic.getValue();
+                Log.d("BLE", "Characteristic Changed: " + Arrays.toString(Readvalue));
+
+                t = String.valueOf(convertBytesToFloatT(value));
             }
             if (characteristic.equals(bluetoothGatt.getService(uuid1).getCharacteristic(uuid_humidity))){
                 Log.d("service","sensor update humidity"+String.valueOf(value));
-                h = String.valueOf(intToHumidity(littleEndianBytesToInt(value)));
+                h = String.valueOf(convertBytesToFloatH(value));
             }
             instruct.setText("Temperature:" + t +"°C"+ "\n" + "Humidity:" + h+"%");
         }
@@ -362,17 +369,16 @@ public class ScanDispActivity extends ListActivity {
         TextView deviceName;
         TextView deviceAddress; //MAC
     }
-    public int littleEndianBytesToInt(byte[] bytes) {
-        return (int)(bytes[1]<<8) +(int)bytes[0];
+
+    public float convertBytesToFloatH(byte[] data) {
+        //int value = ((data[0] & 0xFF) << 8) | (data[1] & 0xFF); // big-endian format
+        int value = ((data[1] & 0xFF) << 8) | (data[0] & 0xFF);   // little-endian format
+        return value / 100.0f;                                    // scaling
     }
-    public float intToTemp(int value)
-    {
-        /*Range Assumed: -40 to +125 degrees Celsius */
-        return Math.round((((float) ((value * 165) /65535)- 40)* 100.0f) / 100.0f);
-    }
-    public float intToHumidity(int value)
-    {
-        /*Range Assumed: 0 to 100 */
-        return Math.round(((float) ((value * 100) /65535)* 100.0f) / 100.0f);
+    public double convertBytesToFloatT(byte[] data) {
+        //int value = ((data[0] & 0xFF) << 8) | (data[1] & 0xFF); // big-endian format
+        int value = ((data[1] & 0xFF) << 8) | (data[0] & 0xFF);
+        double val = (((value-32)*0.56) / 1000.0f);                    // scaling and in Celcius
+        return (Math.round(val*100)/100);
     }
 }
