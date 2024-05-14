@@ -337,13 +337,10 @@ public class ScanDispActivity extends ListActivity {
 
         super.onCharacteristicChanged(gatt, characteristic, value);
             if (characteristic.equals(bluetoothGatt.getService(uuid1).getCharacteristic(uuid_temp))){
-                byte[] Readvalue = characteristic.getValue();
-                Log.d("BLE", "Characteristic Changed: " + Arrays.toString(Readvalue));
-
-                t = String.valueOf(convertBytesToFloatT(value));
+                t = String.valueOf(decodeTemperatureCharacteristic(characteristic));
             }
             if (characteristic.equals(bluetoothGatt.getService(uuid1).getCharacteristic(uuid_humidity))){
-                Log.d("service","sensor update humidity"+String.valueOf(value));
+                //Log.d("service","sensor update humidity"+String.valueOf(value));
                 h = String.valueOf(convertBytesToFloatH(value));
             }
             instruct.setText("Temperature:" + t +"°C"+ "\n" + "Humidity:" + h+"%");
@@ -375,10 +372,32 @@ public class ScanDispActivity extends ListActivity {
         int value = ((data[1] & 0xFF) << 8) | (data[0] & 0xFF);   // little-endian format
         return value / 100.0f;                                    // scaling
     }
-    public double convertBytesToFloatT(byte[] data) {
-        //int value = ((data[0] & 0xFF) << 8) | (data[1] & 0xFF); // big-endian format
-        int value = ((data[1] & 0xFF) << 8) | (data[0] & 0xFF);
-        double val = (((value-32)*0.56) / 1000.0f);                    // scaling and in Celcius
-        return (Math.round(val*100)/100);
+
+    public double decodeTemperatureCharacteristic(BluetoothGattCharacteristic characteristic) {
+        if (characteristic == null) {
+            Log.d("TEMPERATURE", "Characteristic is null");
+        }
+        byte[] data = characteristic.getValue();
+        if (data == null || data.length < 5) {
+            Log.d("TEMPERATURE", "Invalid data length: " + (data == null ? "null" : data.length));
+        }
+        // Read the flags byte
+        byte flags = data[0];
+        boolean isFahrenheit = (flags & 0x01) != 0;
+        // Decode IEEE 11073 FLOAT
+        byte[] tempBytes = new byte[4];
+        System.arraycopy(data, 1, tempBytes, 0, 4);
+        ByteBuffer byteBuffer = ByteBuffer.wrap(tempBytes).order(ByteOrder.LITTLE_ENDIAN);
+        // Extract magnitude (first three bytes as a 24-bit signed integer)
+        int magnitude = byteBuffer.getShort() & 0xFFFF | (byteBuffer.get() << 16);
+        // Extract exponent (last byte as a signed 8-bit integer)
+        byte exponent = byteBuffer.get();
+        // Calculate temperature based on magnitude and exponent
+        double temperature = magnitude * Math.pow(10, exponent);
+        // Log the temperature
+        String unit = isFahrenheit ? "°F" : "°C";
+        Log.d("THIS", "Temperature is " + String.format("%.2f", temperature) + unit);
+        return temperature;
     }
+
 }
